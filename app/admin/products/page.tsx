@@ -103,24 +103,28 @@ export default function AdminProductsPage() {
   const handleDeleteProduct = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
-    const deletePromise = supabase
-      .from('products')
-      .delete()
-      .eq('id', id);
+    const deleteOperation = async () => {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return { success: true };
+    };
 
     toast.promise(
-      deletePromise,
+      deleteOperation(),
       {
         loading: 'Deleting product...',
         success: '✅ Product deleted successfully!',
         error: (err) => `Error: ${err.message}`,
       }
-    );
-
-    const { error } = await deletePromise;
-    if (!error) {
+    ).then(() => {
       loadProducts();
-    }
+    }).catch(() => {
+      // Error already handled by toast
+    });
   };
 
   // Toggle product active status
