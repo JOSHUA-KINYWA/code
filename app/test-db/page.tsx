@@ -1,13 +1,42 @@
 import { createClient } from '@/utils/supabase/server';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+  category: string;
+  created_at?: string;
+}
+
 export default async function TestDatabasePage() {
   const supabase = await createClient();
+  
+  // If Supabase is not configured, show message
+  if (!supabase) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-2xl text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Database Not Configured
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Add Supabase environment variables to enable database features.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Test: Fetch all products
   const { data: products, error } = await supabase
     .from('products')
     .select('*')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false }) as { data: Product[] | null; error: any };
 
   if (error) {
     return (
