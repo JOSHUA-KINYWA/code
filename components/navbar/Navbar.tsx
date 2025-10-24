@@ -7,24 +7,11 @@ import Logo from './Logo';
 import CartButton from './CartButton';
 import DarkMode from './DarkMode';
 import NavSearch from './NavSearch';
-import UserIcon from './UserIcon';
 import LinksDropdown from './LinksDropdown';
-import SignOutLink from './SignOutLink';
-
-// Mock user data - replace with real auth
-const mockUser = {
-  name: 'John Doe',
-  email: 'john@example.com',
-};
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const pathname = usePathname();
-
-  // Check if user is authenticated - replace with real auth check
-  const isAuthenticated = false; // Change to true to see authenticated state
-  const user = isAuthenticated ? mockUser : null;
 
   const isActive = (path: string) => pathname === path;
 
@@ -101,30 +88,16 @@ export default function Navbar() {
               About
             </Link>
 
-            {isAuthenticated && (
-              <>
-                <Link
-                  href="/favorites"
-                  className={`${
-                    isActive('/favorites')
-                      ? 'text-blue-600 dark:text-blue-400 font-semibold'
-                      : 'text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400'
-                  } transition-colors`}
-                >
-                  Favorites
-                </Link>
-                <Link
-                  href="/orders"
-                  className={`${
-                    isActive('/orders')
-                      ? 'text-blue-600 dark:text-blue-400 font-semibold'
-                      : 'text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400'
-                  } transition-colors`}
-                >
-                  Orders
-                </Link>
-              </>
-            )}
+            <Link
+              href="/contact"
+              className={`${
+                isActive('/contact')
+                  ? 'text-blue-600 dark:text-blue-400 font-semibold'
+                  : 'text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400'
+              } transition-colors`}
+            >
+              Contact
+            </Link>
           </div>
 
           {/* Right Side Icons */}
@@ -132,27 +105,6 @@ export default function Navbar() {
             <NavSearch />
             <DarkMode />
             <CartButton itemCount={3} />
-            
-            {/* User Icon with Dropdown */}
-            <div className="hidden md:block">
-              {isAuthenticated ? (
-                <div className="relative">
-                  <button
-                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="flex items-center"
-                  >
-                    <UserIcon user={user} />
-                  </button>
-                  {isUserMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
-                      <SignOutLink />
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <UserIcon user={null} />
-              )}
-            </div>
 
             {/* Mobile Menu Button */}
             <button
@@ -209,55 +161,17 @@ export default function Navbar() {
               >
                 About
               </Link>
-
-              {isAuthenticated ? (
-                <>
-                  <Link
-                    href="/favorites"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`${
-                      isActive('/favorites')
-                        ? 'text-blue-600 dark:text-blue-400 font-semibold'
-                        : 'text-gray-700 dark:text-gray-200'
-                    } px-3 py-2`}
-                  >
-                    Favorites
-                  </Link>
-                  <Link
-                    href="/orders"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`${
-                      isActive('/orders')
-                        ? 'text-blue-600 dark:text-blue-400 font-semibold'
-                        : 'text-gray-700 dark:text-gray-200'
-                    } px-3 py-2`}
-                  >
-                    Orders
-                  </Link>
-                  <Link
-                    href="/reviews"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`${
-                      isActive('/reviews')
-                        ? 'text-blue-600 dark:text-blue-400 font-semibold'
-                        : 'text-gray-700 dark:text-gray-200'
-                    } px-3 py-2`}
-                  >
-                    Reviews
-                  </Link>
-                  <div className="px-3 py-2">
-                    <SignOutLink />
-                  </div>
-                </>
-              ) : (
-                <Link
-                  href="/login"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-gray-700 dark:text-gray-200 px-3 py-2"
-                >
-                  Sign In
-                </Link>
-              )}
+              <Link
+                href="/contact"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`${
+                  isActive('/contact')
+                    ? 'text-blue-600 dark:text-blue-400 font-semibold'
+                    : 'text-gray-700 dark:text-gray-200'
+                } px-3 py-2`}
+              >
+                Contact
+              </Link>
             </div>
           </div>
         )}

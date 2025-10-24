@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { SkeletonLoader } from '@/components/global/Preloader';
+import Image from 'next/image';
 
 interface OrderItem {
   id: string;
@@ -22,6 +24,7 @@ interface Order {
 }
 
 export default function OrdersPage() {
+  const [isLoading, setIsLoading] = useState(true);
   const [orders] = useState<Order[]>([
     {
       id: '1',
@@ -85,6 +88,15 @@ export default function OrdersPage() {
 
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
+  // Simulate loading orders
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 700);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
   const getStatusColor = (status: Order['status']) => {
     const colors = {
       delivered: 'bg-green-100 text-green-800',
@@ -125,12 +137,33 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
-          <p className="text-gray-600 mt-2">Track and manage your orders</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Orders</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Track and manage your orders</p>
         </div>
+
+        {isLoading ? (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 animate-pulse">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="space-y-2 flex-1">
+                    <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+                  </div>
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                </div>
+                <div className="space-y-3">
+                  <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
 
         {orders.length === 0 ? (
           <div className="bg-white rounded-lg shadow-md p-12 text-center">
@@ -255,6 +288,8 @@ export default function OrdersPage() {
               </div>
             ))}
           </div>
+        )}
+        </div>
         )}
       </div>
     </div>

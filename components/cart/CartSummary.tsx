@@ -1,6 +1,8 @@
+'use client';
+
 import React from 'react';
-import Link from 'next/link';
-import Button from '../ui/Button';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 interface CartSummaryProps {
   subtotal: number;
@@ -15,6 +17,18 @@ export default function CartSummary({
   tax,
   total,
 }: CartSummaryProps) {
+  const router = useRouter();
+
+  const handleCheckout = () => {
+    toast.success('Proceeding to checkout...', {
+      icon: '🛍️',
+      duration: 1500,
+    });
+    setTimeout(() => {
+      router.push('/checkout');
+    }, 500);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
       <h2 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
@@ -38,19 +52,20 @@ export default function CartSummary({
         </div>
       </div>
 
-      <Link href="/checkout" className="block">
-        <Button className="w-full">
-          Proceed to Checkout
-          <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </Button>
-      </Link>
+      <button
+        onClick={handleCheckout}
+        className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center"
+      >
+        Proceed to Checkout
+        <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 5l7 7-7 7"
+          />
+        </svg>
+      </button>
 
       <div className="mt-6 space-y-2 text-sm text-gray-600">
         <div className="flex items-center">

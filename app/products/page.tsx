@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { SkeletonLoader } from '@/components/global/Preloader';
 
 interface Product {
   id: string;
@@ -15,9 +17,11 @@ interface Product {
 }
 
 export default function ProductsPage() {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('featured');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const categories = [
     { id: 'all', name: 'All Products' },
@@ -116,6 +120,24 @@ export default function ProductsPage() {
     return matchesCategory && matchesPrice;
   });
 
+  // Simulate loading products
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Add to cart handler
+  const handleAddToCart = (productId: string) => {
+    // Add your cart logic here (e.g., update context, localStorage, etc.)
+    console.log('Added to cart:', productId);
+    
+    // Redirect to cart
+    router.push('/cart');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -205,7 +227,13 @@ export default function ProductsPage() {
 
           {/* Products Grid */}
           <div className="flex-1">
-            {filteredProducts.length === 0 ? (
+            {isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <SkeletonLoader key={i} type="card" />
+                ))}
+              </div>
+            ) : filteredProducts.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-12 text-center">
                 <svg className="mx-auto h-24 w-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -264,6 +292,11 @@ export default function ProductsPage() {
 
                     <div className="p-4 pt-0">
                       <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleAddToCart(product.id);
+                        }}
                         disabled={!product.inStock}
                         className={`w-full py-2 rounded-lg font-medium transition-colors ${
                           product.inStock

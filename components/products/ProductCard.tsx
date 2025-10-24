@@ -2,7 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Rating from '../ui/Rating';
+import toast from 'react-hot-toast';
 
 interface ProductCardProps {
   id: string;
@@ -25,6 +27,27 @@ export default function ProductCard({
   inStock = true,
   onAddToCart,
 }: ProductCardProps) {
+  const router = useRouter();
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (onAddToCart) {
+      onAddToCart(id);
+    }
+    
+    // Show success toast
+    toast.success(`🛒 ${name} added to cart!`, {
+      duration: 2000,
+    });
+    
+    // Small delay to ensure cart state updates
+    setTimeout(() => {
+      router.push('/cart');
+    }, 1000);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden group hover:shadow-xl transition-shadow duration-200">
       <Link href={`/products/${id}`}>
@@ -63,7 +86,7 @@ export default function ProductCard({
 
       <div className="p-4 pt-0">
         <button
-          onClick={() => onAddToCart?.(id)}
+          onClick={handleAddToCart}
           disabled={!inStock}
           className={`w-full py-2 rounded-lg font-medium transition-colors ${
             inStock

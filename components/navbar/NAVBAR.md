@@ -410,14 +410,14 @@ export default function MyNavbar() {
 }
 ```
 
-### Clerk Example
+### Custom Auth Example
 
 ```tsx
-import { useUser } from '@clerk/nextjs';
 import Navbar from '@/components/navbar/Navbar';
 
 export default function MyNavbar() {
-  const { user } = useUser();
+  // Connect to your custom auth system
+  const user = yourAuthSystem.getUser();
   
   return <Navbar user={user} />;
 }

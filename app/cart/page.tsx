@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { SkeletonLoader } from '@/components/global/Preloader';
+import toast from 'react-hot-toast';
 
 interface CartItem {
   id: string;
@@ -15,6 +17,8 @@ interface CartItem {
 }
 
 export default function CartPage() {
+  const [isLoading, setIsLoading] = useState(true);
+  
   // Sample cart data - in a real app, this would come from state management or API
   const [cartItems, setCartItems] = useState<CartItem[]>([
     {
@@ -35,15 +39,29 @@ export default function CartPage() {
     },
   ]);
 
+  // Simulate loading cart data
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
   const updateQuantity = (id: string, newQuantity: number) => {
     if (newQuantity < 1) return;
     setCartItems(cartItems.map(item => 
       item.id === id ? { ...item, quantity: newQuantity } : item
     ));
+    toast.success('Cart updated');
   };
 
   const removeItem = (id: string) => {
+    const item = cartItems.find(i => i.id === id);
     setCartItems(cartItems.filter(item => item.id !== id));
+    if (item) {
+      toast.success(`${item.name} removed from cart`);
+    }
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -52,17 +70,36 @@ export default function CartPage() {
   const total = subtotal + tax + shipping;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Shopping Cart</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Shopping Cart</h1>
 
-        {cartItems.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <svg className="mx-auto h-24 w-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {isLoading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-4">
+              {[...Array(2)].map((_, i) => (
+                <SkeletonLoader key={i} type="list" />
+              ))}
+            </div>
+            <div className="lg:col-span-1">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 animate-pulse">
+                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-4"></div>
+                <div className="space-y-3">
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded mt-6"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : cartItems.length === 0 ? (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center">
+            <svg className="mx-auto h-24 w-24 text-gray-400 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
             </svg>
-            <h2 className="mt-4 text-2xl font-semibold text-gray-900">Your cart is empty</h2>
-            <p className="mt-2 text-gray-600">Add some products to get started</p>
+            <h2 className="mt-4 text-2xl font-semibold text-gray-900 dark:text-white">Your cart is empty</h2>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">Add some products to get started</p>
             <Link 
               href="/products" 
               className="mt-6 inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
@@ -75,7 +112,7 @@ export default function CartPage() {
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-4">
               {cartItems.map((item) => (
-                <div key={item.id} className="bg-white rounded-lg shadow-md p-6">
+                <div key={item.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                   <div className="flex items-center space-x-4">
                     <div className="flex-shrink-0 w-24 h-24 bg-gray-200 rounded-md relative overflow-hidden">
                       {/* Replace with actual image */}
@@ -87,14 +124,14 @@ export default function CartPage() {
                     </div>
 
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{item.name}</h3>
                       {item.color && (
-                        <p className="text-sm text-gray-600 mt-1">Color: {item.color}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Color: {item.color}</p>
                       )}
                       {item.size && (
-                        <p className="text-sm text-gray-600">Size: {item.size}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Size: {item.size}</p>
                       )}
-                      <p className="text-lg font-bold text-gray-900 mt-2">${item.price.toFixed(2)}</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white mt-2">${item.price.toFixed(2)}</p>
                     </div>
 
                     <div className="flex flex-col items-end space-y-4">
@@ -137,23 +174,23 @@ export default function CartPage() {
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 sticky top-4">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Order Summary</h2>
                 
                 <div className="space-y-3 mb-6">
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-gray-600 dark:text-gray-400">
                     <span>Subtotal</span>
                     <span>${subtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-gray-600 dark:text-gray-400">
                     <span>Shipping</span>
                     <span>${shipping.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-gray-600 dark:text-gray-400">
                     <span>Tax (10%)</span>
                     <span>${tax.toFixed(2)}</span>
                   </div>
-                  <div className="border-t pt-3 flex justify-between text-lg font-bold text-gray-900">
+                  <div className="border-t dark:border-gray-700 pt-3 flex justify-between text-lg font-bold text-gray-900 dark:text-white">
                     <span>Total</span>
                     <span>${total.toFixed(2)}</span>
                   </div>
