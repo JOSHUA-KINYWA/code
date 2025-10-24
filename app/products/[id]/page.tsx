@@ -7,6 +7,8 @@ import ProductDetails from '@/components/single-product/ProductDetails';
 import ProductReviews from '@/components/single-product/ProductReviews';
 import { PageLoader } from '@/components/global/Preloader';
 import toast from 'react-hot-toast';
+import { useUser } from '@clerk/nextjs';
+import { useCart } from '@/context/CartContext';
 
 // Mock product data - in a real app, this would come from an API
 const productsData = {
@@ -103,6 +105,8 @@ const productsData = {
 export default function ProductDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const { isSignedIn } = useUser();
+  const { addToCart } = useCart();
   const productId = params.id as string;
   const [isLoading, setIsLoading] = useState(true);
 
@@ -142,21 +146,60 @@ export default function ProductDetailPage() {
   }
 
   const handleAddToCart = () => {
-    // Add your cart logic here (e.g., update context, localStorage, etc.)
-    console.log('Added to cart:', product.id);
+    // Check if user is signed in
+    if (!isSignedIn) {
+      toast.error('🔒 Please sign in to add items to cart', {
+        duration: 3000,
+      });
+      setTimeout(() => {
+        router.push('/sign-in');
+      }, 1500);
+      return;
+    }
+
+    // Debug logging
+    console.log('Adding to cart:', {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.images[0],
+      category: product.category,
+    });
+    
+    // Add to cart using context
+    try {
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.images[0],
+        category: product.category,
+      });
+      console.log('Successfully added to cart');
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error('Failed to add to cart');
+      return;
+    }
     
     // Show success toast
     toast.success(`🛒 ${product.name} added to cart!`, {
-      duration: 2000,
+      duration: 3000,
     });
-    
-    // Redirect to cart after a short delay
-    setTimeout(() => {
-      router.push('/cart');
-    }, 1000);
   };
 
   const handleAddToFavorites = () => {
+    // Check if user is signed in
+    if (!isSignedIn) {
+      toast.error('🔒 Please sign in to add items to favorites', {
+        duration: 3000,
+      });
+      setTimeout(() => {
+        router.push('/sign-in');
+      }, 1500);
+      return;
+    }
+
     // Add your favorites logic here
     console.log('Added to favorites:', product.id);
     

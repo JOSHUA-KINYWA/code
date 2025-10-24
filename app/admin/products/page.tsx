@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { useUser } from '@clerk/nextjs';
 
 interface Product {
   id: string;
@@ -19,10 +20,32 @@ interface Product {
 export default function AdminProductsPage() {
   const router = useRouter();
   const supabase = createClient();
+  const { user, isSignedIn, isLoaded } = useUser();
   
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  // Protect admin route
+  useEffect(() => {
+    if (isLoaded) {
+      if (!isSignedIn) {
+        toast.error('🔒 Please sign in to access admin panel');
+        router.push('/sign-in');
+        return;
+      }
+
+      const userRole = user?.publicMetadata?.role as string || 'user';
+      if (userRole !== 'admin') {
+        toast.error('❌ Access denied! Admin privileges required.');
+        router.push('/');
+        return;
+      }
+
+      setIsAuthorized(true);
+    }
+  }, [isLoaded, isSignedIn, user, router]);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -36,8 +59,10 @@ export default function AdminProductsPage() {
 
   // Load products from database
   useEffect(() => {
-    loadProducts();
-  }, []);
+    if (isAuthorized) {
+      loadProducts();
+    }
+  }, [isAuthorized]);
 
   const loadProducts = async () => {
     setLoading(true);
@@ -141,6 +166,18 @@ export default function AdminProductsPage() {
       loadProducts();
     }
   };
+
+  // Show loading while checking auth
+  if (!isLoaded || !isAuthorized) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Verifying admin access...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

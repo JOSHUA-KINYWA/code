@@ -8,10 +8,14 @@ import CartButton from './CartButton';
 import DarkMode from './DarkMode';
 import NavSearch from './NavSearch';
 import LinksDropdown from './LinksDropdown';
+import { SignedIn, SignedOut } from '@clerk/nextjs';
+import UserProfileDisplay from './UserProfileDisplay';
+import { useCart } from '@/context/CartContext';
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { cartCount } = useCart();
 
   const isActive = (path: string) => pathname === path;
 
@@ -104,7 +108,21 @@ export default function Navbar() {
           <div className="flex items-center space-x-4">
             <NavSearch />
             <DarkMode />
-            <CartButton itemCount={3} />
+            <CartButton itemCount={cartCount} />
+
+            {/* Auth Buttons */}
+            <div className="hidden md:flex items-center gap-3">
+              <SignedOut>
+                <Link href="/sign-in">
+                  <button className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                    Sign In
+                  </button>
+                </Link>
+              </SignedOut>
+              <SignedIn>
+                <UserProfileDisplay />
+              </SignedIn>
+            </div>
 
             {/* Mobile Menu Button */}
             <button
@@ -172,6 +190,20 @@ export default function Navbar() {
               >
                 Contact
               </Link>
+
+              {/* Mobile Auth */}
+              <SignedOut>
+                <Link href="/sign-in" onClick={() => setIsMobileMenuOpen(false)}>
+                  <button className="mx-3 my-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm w-full">
+                    Sign In
+                  </button>
+                </Link>
+              </SignedOut>
+              <SignedIn>
+                <div className="px-3 py-2 border-t border-gray-200 dark:border-gray-700 mt-2 pt-4">
+                  <UserProfileDisplay />
+                </div>
+              </SignedIn>
             </div>
           </div>
         )}

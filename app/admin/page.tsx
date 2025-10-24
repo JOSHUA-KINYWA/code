@@ -1,10 +1,49 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import toast from 'react-hot-toast';
 
 export default function AdminPage() {
-  const userName = 'Admin';
+  const router = useRouter();
+  const { user, isSignedIn, isLoaded } = useUser();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  useEffect(() => {
+    if (isLoaded) {
+      if (!isSignedIn) {
+        toast.error('🔒 Please sign in to access admin panel');
+        router.push('/sign-in');
+        return;
+      }
+
+      // Check if user has admin role (you can set this in Clerk dashboard under user metadata)
+      const userRole = user?.publicMetadata?.role as string || 'user';
+      
+      if (userRole !== 'admin') {
+        toast.error('❌ Access denied! Admin privileges required.');
+        router.push('/');
+        return;
+      }
+
+      setIsAuthorized(true);
+    }
+  }, [isLoaded, isSignedIn, user, router]);
+
+  if (!isLoaded || !isAuthorized) {
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Verifying admin access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const userName = user?.firstName || user?.emailAddresses[0].emailAddress || 'Admin';
   
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900">

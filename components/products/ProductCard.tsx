@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Rating from '../ui/Rating';
 import toast from 'react-hot-toast';
+import { useUser } from '@clerk/nextjs';
+import { useCart } from '@/context/CartContext';
 
 interface ProductCardProps {
   id: string;
@@ -14,6 +16,7 @@ interface ProductCardProps {
   rating?: number;
   reviews?: number;
   inStock?: boolean;
+  category?: string;
   onAddToCart?: (id: string) => void;
 }
 
@@ -25,13 +28,46 @@ export default function ProductCard({
   rating = 0,
   reviews = 0,
   inStock = true,
+  category,
   onAddToCart,
 }: ProductCardProps) {
   const router = useRouter();
+  const { isSignedIn } = useUser();
+  const { addToCart } = useCart();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Check if user is signed in
+    if (!isSignedIn) {
+      toast.error('🔒 Please sign in to add items to cart', {
+        duration: 3000,
+      });
+      setTimeout(() => {
+        router.push('/sign-in');
+      }, 1500);
+      return;
+    }
+    
+    // Debug logging
+    console.log('Adding to cart:', { id, name, price, image, category });
+    
+    // Add to cart using context
+    try {
+      addToCart({
+        id,
+        name,
+        price,
+        image,
+        category,
+      });
+      console.log('Successfully added to cart');
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast.error('Failed to add to cart');
+      return;
+    }
     
     if (onAddToCart) {
       onAddToCart(id);
@@ -39,13 +75,8 @@ export default function ProductCard({
     
     // Show success toast
     toast.success(`🛒 ${name} added to cart!`, {
-      duration: 2000,
+      duration: 3000,
     });
-    
-    // Small delay to ensure cart state updates
-    setTimeout(() => {
-      router.push('/cart');
-    }, 1000);
   };
 
   return (

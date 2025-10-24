@@ -4,6 +4,9 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { SkeletonLoader } from '@/components/global/Preloader';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import toast from 'react-hot-toast';
 
 interface OrderItem {
   id: string;
@@ -24,7 +27,29 @@ interface Order {
 }
 
 export default function OrdersPage() {
+  const router = useRouter();
+  const { isSignedIn, isLoaded } = useUser();
   const [isLoading, setIsLoading] = useState(true);
+
+  // Protect this route - require authentication
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      toast.error('🔒 Please sign in to view your orders');
+      router.push('/sign-in');
+    }
+  }, [isLoaded, isSignedIn, router]);
+
+  // Show loading while checking auth
+  if (!isLoaded || !isSignedIn) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading your orders...</p>
+        </div>
+      </div>
+    );
+  }
   const [orders] = useState<Order[]>([
     {
       id: '1',

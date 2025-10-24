@@ -42,11 +42,11 @@ const categories = [
 
 export default function Categories() {
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 bg-white dark:bg-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900">Shop by Category</h2>
-          <p className="text-gray-600 mt-2">Find exactly what you're looking for</p>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Shop by Category</h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Find exactly what you&apos;re looking for</p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {categories.map((category) => (
@@ -55,11 +55,11 @@ export default function Categories() {
               href={`/products?category=${category.id}`}
               className="group"
             >
-              <div className="bg-gray-50 rounded-lg p-8 text-center hover:bg-blue-50 hover:shadow-lg transition-all duration-200">
-                <div className="text-gray-600 group-hover:text-blue-600 transition-colors mb-4 flex justify-center">
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-8 text-center hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:shadow-lg transition-all duration-200">
+                <div className="text-gray-600 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-4 flex justify-center">
                   {category.icon}
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                   {category.name}
                 </h3>
               </div>

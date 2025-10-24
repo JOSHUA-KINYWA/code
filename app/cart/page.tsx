@@ -5,69 +5,36 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { SkeletonLoader } from '@/components/global/Preloader';
 import toast from 'react-hot-toast';
-
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-  size?: string;
-  color?: string;
-}
+import { useCart } from '@/context/CartContext';
 
 export default function CartPage() {
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Sample cart data - in a real app, this would come from state management or API
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: '1',
-      name: 'Premium Wireless Headphones',
-      price: 299.99,
-      quantity: 1,
-      image: '/placeholder-product.jpg',
-      color: 'Black',
-    },
-    {
-      id: '2',
-      name: 'Smart Watch Series 5',
-      price: 399.99,
-      quantity: 2,
-      image: '/placeholder-product.jpg',
-      color: 'Silver',
-    },
-  ]);
+  const { cartItems, updateQuantity: updateCartQuantity, removeFromCart, subtotal, tax, shipping, total, isInitialized } = useCart();
 
-  // Simulate loading cart data
+  // Wait for cart to initialize from localStorage
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, []);
+    if (isInitialized) {
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialized]);
 
   const updateQuantity = (id: string, newQuantity: number) => {
     if (newQuantity < 1) return;
-    setCartItems(cartItems.map(item => 
-      item.id === id ? { ...item, quantity: newQuantity } : item
-    ));
+    updateCartQuantity(id, newQuantity);
     toast.success('Cart updated');
   };
 
   const removeItem = (id: string) => {
     const item = cartItems.find(i => i.id === id);
-    setCartItems(cartItems.filter(item => item.id !== id));
+    removeFromCart(id);
     if (item) {
       toast.success(`${item.name} removed from cart`);
     }
   };
-
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tax = subtotal * 0.1; // 10% tax
-  const shipping = 15.00;
-  const total = subtotal + tax + shipping;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

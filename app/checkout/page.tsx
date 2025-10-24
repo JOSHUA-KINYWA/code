@@ -1,14 +1,38 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { useUser } from '@clerk/nextjs';
+import { useCart } from '@/context/CartContext';
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { isSignedIn, isLoaded } = useUser();
+  const { cartItems, subtotal, tax, shipping, total, clearCart } = useCart();
   const [step, setStep] = useState(1); // 1: Shipping, 2: Payment, 3: Review
   const [isLoading, setIsLoading] = useState(false);
+
+  // Protect this route - require authentication
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      toast.error('🔒 Please sign in to continue to checkout');
+      router.push('/sign-in');
+    }
+  }, [isLoaded, isSignedIn, router]);
+
+  // Show loading while checking auth
+  if (!isLoaded || !isSignedIn) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
 
   const [shippingInfo, setShippingInfo] = useState({
     fullName: '',
@@ -29,16 +53,13 @@ export default function CheckoutPage() {
     saveCard: false,
   });
 
-  // Mock cart items
-  const cartItems = [
-    { id: '1', name: 'Premium Wireless Headphones', price: 299.99, quantity: 1, image: '/placeholder.jpg' },
-    { id: '2', name: 'Smart Watch Series 5', price: 399.99, quantity: 1, image: '/placeholder.jpg' },
-  ];
-
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = 15.00;
-  const tax = subtotal * 0.1;
-  const total = subtotal + shipping + tax;
+  // Check if cart is empty
+  useEffect(() => {
+    if (isLoaded && isSignedIn && cartItems.length === 0) {
+      toast.error('Your cart is empty! Add some items first.');
+      router.push('/products');
+    }
+  }, [isLoaded, isSignedIn, cartItems, router]);
 
   const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setShippingInfo({ ...shippingInfo, [e.target.name]: e.target.value });
@@ -69,6 +90,10 @@ export default function CheckoutPage() {
     );
 
     await orderPromise;
+    
+    // Clear cart after successful order
+    clearCart();
+    
     setIsLoading(false);
     router.push('/order-success');
   };
