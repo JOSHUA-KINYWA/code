@@ -7,12 +7,14 @@ import { Toaster } from 'react-hot-toast';
 import { ClerkProvider } from '@clerk/nextjs';
 import ClerkAuthToasts from '@/components/auth/ClerkAuthToasts';
 import { CartProvider } from '@/context/CartContext';
+import { FavoritesProvider } from '@/context/FavoritesContext';
+import ChatWidget from '@/components/chat/ChatWidget';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'E-Commerce Store',
-  description: 'Your trusted destination for quality products',
+  title: 'NexStore - Your Trusted Online Shopping Destination',
+  description: 'Shop the latest products at NexStore. Quality items, secure payments, and fast delivery across Kenya.',
 };
 
 export default function RootLayout({
@@ -23,10 +25,11 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className={inter.className}>
+        <body className={inter.className} suppressHydrationWarning>
           <CartProvider>
-            <ClerkAuthToasts />
-            <Toaster 
+            <FavoritesProvider>
+              <ClerkAuthToasts />
+              <Toaster 
               position="top-right"
               toastOptions={{
                 duration: 3000,
@@ -55,6 +58,8 @@ export default function RootLayout({
               {children}
             </main>
             <Footer />
+            <ChatWidget />
+            </FavoritesProvider>
           </CartProvider>
         </body>
       </html>

@@ -104,7 +104,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const clearCart = () => {
+    console.log('CartContext: Clearing cart');
     setCartItems([]);
+    // Also clear localStorage to prevent cart from reappearing on refresh
+    localStorage.removeItem('cart');
+    console.log('CartContext: Cart cleared from state and localStorage');
   };
 
   // Calculate cart metrics

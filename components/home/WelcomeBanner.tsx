@@ -114,7 +114,7 @@ export default function WelcomeBanner() {
             </Link>
 
             <Link
-              href="/favorites"
+              href="/favourite"
               className="group bg-white/15 hover:bg-white/25 backdrop-blur-md rounded-xl p-4 transition-all border border-white/20 hover:border-white/40 hover:scale-105"
             >
               <div className="flex flex-col items-center text-center gap-2">

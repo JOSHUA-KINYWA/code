@@ -13,15 +13,15 @@ datasource db {
 
 // User Model
 model User {
-  id            String    @id @default(cuid())
+  id            String    @id
   name          String
   email         String    @unique
   password      String
   role          Role      @default(USER)
   avatar        String?
   phone         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
   
   // Relations
   orders        Order[]
@@ -40,19 +40,21 @@ enum Role {
 
 // Product Model
 model Product {
-  id            String    @id @default(cuid())
+  id            String    @id @default(uuid())
   name          String
   description   String    @db.Text
   price         Float
-  comparePrice  Float?    // Original price for discount display
+  comparePrice  Float?    @map("compare_price") // Original price for discount display
   images        String[]
   category      String
   stock         Int       @default(0)
-  isActive      Boolean   @default(true)
+  isActive      Boolean   @default(true) @map("is_active")
+  isTrending    Boolean   @default(false) @map("is_trending")
+  isFlashDeal   Boolean   @default(false) @map("is_flash_deal")
   rating        Float     @default(0)
-  reviewCount   Int       @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  reviewCount   Int       @default(0) @map("review_count")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
   
   // Relations
   orderItems    OrderItem[]
@@ -63,6 +65,8 @@ model Product {
   @@map("products")
   @@index([category])
   @@index([isActive])
+  @@index([isTrending])
+  @@index([isFlashDeal])
 }
 
 // Cart Model
@@ -94,9 +98,9 @@ model CartItem {
 
 // Order Model
 model Order {
-  id              String      @id @default(cuid())
-  orderNumber     String      @unique
-  userId          String
+  id              String      @id @default(uuid())
+  orderNumber     String      @unique @map("order_number")
+  userId          String      @map("user_id")
   user            User        @relation(fields: [userId], references: [id])
   status          OrderStatus @default(PROCESSING)
   
@@ -104,30 +108,42 @@ model Order {
   subtotal        Float
   tax             Float
   shipping        Float
+  discount        Float       @default(0) // Coupon discount amount
   total           Float
   
+  // Coupon Info
+  couponCode      String?     @map("coupon_code")
+  couponId        String?     @map("coupon_id")
+  coupon          Coupon?     @relation(fields: [couponId], references: [id])
+  
   // Shipping Info
-  shippingAddress String
-  shippingCity    String
-  shippingState   String
-  shippingZip     String
-  shippingCountry String
+  shippingAddress String      @map("shipping_address")
+  shippingCity    String      @map("shipping_city")
+  shippingState   String      @map("shipping_state")
+  shippingZip     String      @map("shipping_zip")
+  shippingCountry String      @map("shipping_country")
   
   // Payment Info
-  paymentMethod   String
-  paymentStatus   PaymentStatus @default(PENDING)
+  paymentMethod   String      @map("payment_method")
+  paymentStatus   PaymentStatus @default(PENDING) @map("payment_status")
   
   // Timestamps
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  deliveredAt     DateTime?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deliveredAt     DateTime? @map("delivered_at")
+  cancelledAt     DateTime? @map("cancelled_at")
+  
+  // Cancellation
+  cancellationReason String? @map("cancellation_reason")
   
   // Relations
   items           OrderItem[]
+  payment         Payment?
   
   @@map("orders")
   @@index([userId])
   @@index([status])
+  @@index([couponId])
 }
 
 enum OrderStatus {
@@ -136,6 +152,8 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+
+  @@map("order_status")
 }
 
 enum PaymentStatus {
@@ -143,18 +161,20 @@ enum PaymentStatus {
   PAID
   FAILED
   REFUNDED
+
+  @@map("payment_status")
 }
 
 // Order Item Model
 model OrderItem {
   id        String   @id @default(cuid())
-  orderId   String
+  orderId   String   @map("order_id")
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
+  productId String   @map("product_id")
   product   Product  @relation(fields: [productId], references: [id])
   quantity  Int
   price     Float    // Price at time of order
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
   
   @@map("order_items")
 }
@@ -162,17 +182,17 @@ model OrderItem {
 // Review Model
 model Review {
   id        String   @id @default(cuid())
-  userId    String
+  userId    String   @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  productId String
+  productId String   @map("product_id")
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   rating    Int      // 1-5
   title     String
   comment   String   @db.Text
   verified  Boolean  @default(false)
   helpful   Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
   
   @@map("reviews")
   @@unique([userId, productId]) // One review per user per product
@@ -182,18 +202,18 @@ model Review {
 // Address Model
 model Address {
   id        String   @id @default(cuid())
-  userId    String
+  userId    String   @map("userId")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fullName  String
+  fullName  String   @map("fullName")
   phone     String
   address   String
   city      String
   state     String
-  zipCode   String
+  zipCode   String   @map("zipCode")
   country   String   @default("United States")
-  isDefault Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isDefault Boolean  @default(false) @map("isDefault")
+  createdAt DateTime @default(now()) @map("createdAt")
+  updatedAt DateTime @updatedAt @map("updatedAt")
   
   @@map("addresses")
   @@index([userId])
@@ -211,4 +231,116 @@ model Favorite {
   @@map("favorites")
   @@unique([userId, productId])
   @@index([userId])
+}
+
+// Chat/Support Models
+model ChatConversation {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @map("user_id")
+  userName        String    @map("user_name")
+  userEmail       String    @map("user_email")
+  status          String    @default("open") // open, closed
+  lastReadByAdmin DateTime? @map("last_read_by_admin")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  messages ChatMessage[]
+
+  @@map("chat_conversations")
+  @@index([userId])
+  @@index([status])
+}
+
+model ChatMessage {
+  id             String   @id @default(uuid()) @db.Uuid
+  conversationId String   @map("conversation_id") @db.Uuid
+  senderId       String   @map("sender_id")
+  senderName     String   @map("sender_name")
+  senderRole     String   @map("sender_role") // user, admin
+  message        String   @db.Text
+  imageUrl       String?  @map("image_url") @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
+  @@index([conversationId])
+}
+
+// M-Pesa Payment Model
+model Payment {
+  id                     String    @id @default(uuid())
+  orderId                String    @unique @map("order_id")
+  phoneNumber            String    @map("phone_number")
+  amount                 Float
+  merchantRequestID      String?   @map("merchant_request_id")
+  checkoutRequestID      String?   @map("checkout_request_id")
+  mpesaReceiptNumber     String?   @map("mpesa_receipt_number")
+  transactionDate        DateTime? @map("transaction_date")
+  resultCode             String?   @map("result_code")
+  resultDesc             String?   @map("result_desc")
+  status                 String    @default("pending") // pending, completed, failed
+  
+  // Stripe fields
+  stripePaymentIntentId  String?   @map("stripe_payment_intent_id")
+  stripeRefundId         String?   @map("stripe_refund_id")
+  
+  // Refund fields
+  refundStatus           String?   @map("refund_status") // PENDING, COMPLETED, FAILED
+  refundInitiatedAt      DateTime? @map("refund_initiated_at")
+  refundCompletedAt      DateTime? @map("refund_completed_at")
+  
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+  
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@map("payments")
+  @@index([orderId])
+  @@index([checkoutRequestID])
+  @@index([status])
+}
+
+// Coupon Model
+model Coupon {
+  id                String       @id @default(uuid())
+  code              String       @unique // Coupon code (e.g., "SAVE20")
+  description       String?      @db.Text
+  
+  // Discount Type & Amount
+  discountType      DiscountType @map("discount_type") // PERCENTAGE, FIXED_AMOUNT, FREE_SHIPPING
+  discountValue     Float        @map("discount_value") // Percentage (20) or Fixed Amount (10.00)
+  
+  // Usage Limits
+  maxUses           Int?         @map("max_uses") // Total times this coupon can be used (null = unlimited)
+  maxUsesPerUser    Int?         @default(1) @map("max_uses_per_user") // Times per user
+  usedCount         Int          @default(0) @map("used_count") // Times this coupon has been used
+  
+  // Conditions
+  minimumOrderValue Float?       @map("minimum_order_value") // Minimum cart value to apply
+  maxDiscount       Float?       @map("max_discount") // Max discount amount (for percentage coupons)
+  
+  // Validity
+  isActive          Boolean      @default(true) @map("is_active")
+  validFrom         DateTime     @default(now()) @map("valid_from")
+  validUntil        DateTime?    @map("valid_until")
+  
+  // Timestamps
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+  
+  // Relations
+  orders            Order[]
+  
+  @@map("coupons")
+  @@index([code])
+  @@index([isActive])
+}
+
+enum DiscountType {
+  PERCENTAGE      // e.g., 20% off
+  FIXED_AMOUNT    // e.g., $10 off
+  FREE_SHIPPING   // Free shipping
+  
+  @@map("discount_type")
 }

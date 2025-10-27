@@ -1,65 +1,36 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import toast from 'react-hot-toast';
-
-interface FavoriteProduct {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  category: string;
-  inStock: boolean;
-}
+import { useFavorites } from '@/context/FavoritesContext';
 
 export default function FavoritesPage() {
   const router = useRouter();
-  const { isSignedIn, isLoaded } = useUser();
-  const [favorites, setFavorites] = useState<FavoriteProduct[]>([
-    {
-      id: '1',
-      name: 'Premium Wireless Headphones',
-      price: 299.99,
-      image: '/placeholder-product.jpg',
-      category: 'Electronics',
-      inStock: true,
-    },
-    {
-      id: '2',
-      name: 'Smart Watch Series 5',
-      price: 399.99,
-      image: '/placeholder-product.jpg',
-      category: 'Wearables',
-      inStock: true,
-    },
-    {
-      id: '3',
-      name: 'Leather Backpack',
-      price: 129.99,
-      image: '/placeholder-product.jpg',
-      category: 'Accessories',
-      inStock: false,
-    },
-    {
-      id: '4',
-      name: 'Bluetooth Speaker',
-      price: 89.99,
-      image: '/placeholder-product.jpg',
-      category: 'Electronics',
-      inStock: true,
-    },
-  ]);
+  const { user, isSignedIn, isLoaded } = useUser();
+  const { favorites, removeFromFavorites } = useFavorites();
 
   // Protect this route - require authentication
   useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      toast.error('🔒 Please sign in to view your favorites');
-      router.push('/sign-in');
+    if (isLoaded) {
+      if (!isSignedIn) {
+        toast.error('🔒 Please sign in to view your favorites');
+        router.push('/sign-in');
+        return;
+      }
+
+      // Block admin from accessing regular user favorites
+      const userRole = user?.publicMetadata?.role as string || 'user';
+      
+      if (userRole === 'admin') {
+        toast.error('⚠️ Admins cannot access user favorites. Use Admin Dashboard.');
+        router.push('/admin');
+        return;
+      }
     }
-  }, [isLoaded, isSignedIn, router]);
+  }, [isLoaded, isSignedIn, user, router]);
 
   // Show loading while checking auth
   if (!isLoaded || !isSignedIn) {
@@ -75,7 +46,7 @@ export default function FavoritesPage() {
 
   const removeFavorite = (id: string) => {
     const product = favorites.find(item => item.id === id);
-    setFavorites(favorites.filter(item => item.id !== id));
+    removeFromFavorites(id);
     
     toast.success(`❤️ ${product?.name || 'Item'} removed from favorites`, {
       duration: 2000,

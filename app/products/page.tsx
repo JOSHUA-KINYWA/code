@@ -11,10 +11,11 @@ interface Product {
   name: string;
   price: number;
   category: string;
-  image: string;
+  images: string[];
   rating: number;
-  reviews: number;
-  inStock: boolean;
+  reviewCount: number;
+  stock: number;
+  isActive: boolean;
 }
 
 export default function ProductsPage() {
@@ -23,97 +24,39 @@ export default function ProductsPage() {
   const [sortBy, setSortBy] = useState<string>('featured');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [isLoading, setIsLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 8;
 
   const categories = [
     { id: 'all', name: 'All Products' },
-    { id: 'electronics', name: 'Electronics' },
-    { id: 'wearables', name: 'Wearables' },
-    { id: 'accessories', name: 'Accessories' },
-    { id: 'audio', name: 'Audio' },
+    { id: 'Electronics', name: 'Electronics' },
+    { id: 'Wearables', name: 'Wearables' },
+    { id: 'Accessories', name: 'Accessories' },
+    { id: 'Audio', name: 'Audio' },
+    { id: 'Gaming', name: 'Gaming' },
+    { id: 'Computers', name: 'Computers' },
   ];
 
-  const products: Product[] = [
-    {
-      id: '1',
-      name: 'Premium Wireless Headphones',
-      price: 299.99,
-      category: 'audio',
-      image: '/placeholder-product.jpg',
-      rating: 4.8,
-      reviews: 342,
-      inStock: true,
-    },
-    {
-      id: '2',
-      name: 'Smart Watch Series 5',
-      price: 399.99,
-      category: 'wearables',
-      image: '/placeholder-product.jpg',
-      rating: 4.6,
-      reviews: 568,
-      inStock: true,
-    },
-    {
-      id: '3',
-      name: 'Leather Backpack',
-      price: 129.99,
-      category: 'accessories',
-      image: '/placeholder-product.jpg',
-      rating: 4.9,
-      reviews: 234,
-      inStock: false,
-    },
-    {
-      id: '4',
-      name: 'Bluetooth Speaker',
-      price: 89.99,
-      category: 'audio',
-      image: '/placeholder-product.jpg',
-      rating: 4.5,
-      reviews: 445,
-      inStock: true,
-    },
-    {
-      id: '5',
-      name: 'Wireless Earbuds Pro',
-      price: 199.99,
-      category: 'audio',
-      image: '/placeholder-product.jpg',
-      rating: 4.7,
-      reviews: 789,
-      inStock: true,
-    },
-    {
-      id: '6',
-      name: 'Fitness Tracker Band',
-      price: 79.99,
-      category: 'wearables',
-      image: '/placeholder-product.jpg',
-      rating: 4.4,
-      reviews: 321,
-      inStock: true,
-    },
-    {
-      id: '7',
-      name: 'USB-C Hub Adapter',
-      price: 49.99,
-      category: 'electronics',
-      image: '/placeholder-product.jpg',
-      rating: 4.6,
-      reviews: 156,
-      inStock: true,
-    },
-    {
-      id: '8',
-      name: 'Portable Charger 20000mAh',
-      price: 59.99,
-      category: 'electronics',
-      image: '/placeholder-product.jpg',
-      rating: 4.8,
-      reviews: 892,
-      inStock: true,
-    },
-  ];
+  // Fetch products from database
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch('/api/products');
+        if (response.ok) {
+          const data = await response.json();
+          // Only show active products
+          setProducts(data.filter((p: Product) => p.isActive));
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const filteredProducts = products.filter(product => {
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
@@ -121,14 +64,16 @@ export default function ProductsPage() {
     return matchesCategory && matchesPrice;
   });
 
-  // Simulate loading products
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  const startIndex = (currentPage - 1) * productsPerPage;
+  const endIndex = startIndex + productsPerPage;
+  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-    
-    return () => clearTimeout(timer);
-  }, []);
+    setCurrentPage(1);
+  }, [selectedCategory, priceRange, sortBy]);
 
   // Add to cart handler
   const handleAddToCart = (productId: string) => {
@@ -252,40 +197,102 @@ export default function ProductsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => (
+            {currentProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 id={product.id}
                 name={product.name}
                 price={product.price}
-                image={product.image}
+                image={product.images[0] || '/placeholder-product.jpg'}
+                images={product.images}
                 rating={product.rating}
-                reviews={product.reviews}
-                inStock={product.inStock}
+                reviews={product.reviewCount}
+                stock={product.stock}
                 category={product.category}
               />
             ))}
           </div>
         )}
 
-        {/* Pagination Placeholder */}
-        {!isLoading && filteredProducts.length > 0 && (
-          <div className="mt-12 flex justify-center items-center gap-2">
-            <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50" disabled>
-              Previous
-            </button>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium">
-              1
-            </button>
-            <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-              2
-            </button>
-            <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-              3
-            </button>
-            <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-              Next
-            </button>
+        {/* Pagination */}
+        {!isLoading && filteredProducts.length > productsPerPage && (
+          <div className="mt-12">
+            {/* Pagination Info */}
+            <div className="text-center mb-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Showing <span className="font-semibold text-gray-900 dark:text-white">{startIndex + 1}</span> to{' '}
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  {Math.min(endIndex, filteredProducts.length)}
+                </span>{' '}
+                of <span className="font-semibold text-gray-900 dark:text-white">{filteredProducts.length}</span> products
+              </p>
+            </div>
+            
+            {/* Pagination Controls */}
+            <div className="flex justify-center items-center gap-2">
+              {/* Previous Button */}
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Previous
+              </button>
+
+              {/* Page Numbers */}
+              <div className="flex items-center gap-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  // Show first page, last page, current page, and pages around current
+                  const showPage =
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1);
+
+                  // Show ellipsis
+                  const showEllipsisBefore = page === currentPage - 2 && currentPage > 3;
+                  const showEllipsisAfter = page === currentPage + 2 && currentPage < totalPages - 2;
+
+                  if (showEllipsisBefore || showEllipsisAfter) {
+                    return (
+                      <span key={page} className="px-2 text-gray-500 dark:text-gray-400">
+                        ...
+                      </span>
+                    );
+                  }
+
+                  if (!showPage) return null;
+
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                        currentPage === page
+                          ? 'bg-blue-600 text-white shadow-lg scale-105'
+                          : 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Next Button */}
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+              >
+                Next
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
           </div>
         )}
       </div>

@@ -1,52 +1,46 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ProductCard from '../products/ProductCard';
 import { useUser } from '@clerk/nextjs';
 
-const featuredProducts = [
-  {
-    id: '1',
-    name: 'Premium Wireless Headphones',
-    price: 299.99,
-    image: '/placeholder-product.jpg',
-    rating: 4.8,
-    reviews: 342,
-    category: 'Audio',
-  },
-  {
-    id: '2',
-    name: 'Smart Watch Series 5',
-    price: 399.99,
-    image: '/placeholder-product.jpg',
-    rating: 4.6,
-    reviews: 568,
-    category: 'Wearables',
-  },
-  {
-    id: '3',
-    name: 'Wireless Earbuds Pro',
-    price: 199.99,
-    image: '/placeholder-product.jpg',
-    rating: 4.7,
-    reviews: 789,
-    category: 'Audio',
-  },
-  {
-    id: '4',
-    name: 'Bluetooth Speaker',
-    price: 89.99,
-    image: '/placeholder-product.jpg',
-    rating: 4.5,
-    reviews: 445,
-    category: 'Audio',
-  },
-];
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  images: string[];
+  rating: number;
+  reviewCount: number;
+  category: string;
+  stock: number;
+}
 
 export default function FeaturedProducts() {
   const { user, isSignedIn } = useUser();
   const displayName = user?.firstName || user?.username || 'there';
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch products from database
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch('/api/products');
+        if (response.ok) {
+          const data = await response.json();
+          // Show only 4 active products
+          setProducts(data.filter((p: Product) => p.isActive).slice(0, 4));
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   return (
     <section className="py-16 bg-gray-50 dark:bg-gray-900">
@@ -73,9 +67,30 @@ export default function FeaturedProducts() {
           </Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredProducts.map((product) => (
-            <ProductCard key={product.id} {...product} />
-          ))}
+          {isLoading ? (
+            [...Array(4)].map((_, i) => (
+              <div key={i} className="bg-gray-200 dark:bg-gray-700 rounded-xl h-80 animate-pulse"></div>
+            ))
+          ) : products.length === 0 ? (
+            <div className="col-span-4 text-center py-12 text-gray-500 dark:text-gray-400">
+              No products available
+            </div>
+          ) : (
+            products.map((product) => (
+              <ProductCard
+                key={product.id}
+                id={product.id}
+                name={product.name}
+                price={product.price}
+                image={product.images[0] || '/placeholder-product.jpg'}
+                images={product.images}
+                rating={product.rating}
+                reviews={product.reviewCount}
+                inStock={product.stock > 0}
+                category={product.category}
+              />
+            ))
+          )}
         </div>
       </div>
     </section>

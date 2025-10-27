@@ -47,7 +47,7 @@ export default function UserDashboard() {
 
         {/* Favorites Card */}
         <Link
-          href="/favorites"
+          href="/favourite"
           className="bg-gradient-to-br from-pink-500 to-rose-600 rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1 group"
         >
           <div className="flex items-center justify-between mb-4">

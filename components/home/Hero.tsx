@@ -45,11 +45,30 @@ export default function Hero() {
             </div>
           </div>
           <div className="hidden lg:block">
-            <div className="bg-white/10 rounded-lg p-8 backdrop-blur-sm">
-              <div className="aspect-square bg-white/20 rounded-lg flex items-center justify-center">
-                <svg className="w-32 h-32 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+              <img 
+                src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&auto=format&fit=crop&q=80" 
+                alt="Shopping Experience" 
+                className="w-full h-[500px] object-cover rounded-2xl"
+                onError={(e) => {
+                  e.currentTarget.src = "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&auto=format&fit=crop&q=80";
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent rounded-2xl"></div>
+              <div className="absolute bottom-8 left-8 right-8">
+                <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-6 shadow-xl">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div className="text-gray-900 dark:text-white">
+                      <p className="font-bold text-lg">Quality Guaranteed</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">Free shipping on orders over $50</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

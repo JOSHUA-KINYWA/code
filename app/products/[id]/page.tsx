@@ -9,9 +9,10 @@ import { PageLoader } from '@/components/global/Preloader';
 import toast from 'react-hot-toast';
 import { useUser } from '@clerk/nextjs';
 import { useCart } from '@/context/CartContext';
+import { useFavorites } from '@/context/FavoritesContext';
 
-// Mock product data - in a real app, this would come from an API
-const productsData = {
+// This will be replaced with actual data from API
+const productsData: any = {
   '1': {
     id: '1',
     name: 'Premium Wireless Headphones',
@@ -102,25 +103,53 @@ const productsData = {
   },
 };
 
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  description: string;
+  rating: number;
+  reviewCount: number;
+  stock: number;
+  images: string[];
+  isActive: boolean;
+}
+
 export default function ProductDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
   const { addToCart } = useCart();
+  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites();
   const productId = params.id as string;
   const [isLoading, setIsLoading] = useState(true);
+  const [product, setProduct] = useState<Product | null>(null);
+  
+  // Check if user is admin
+  const isAdmin = user?.publicMetadata?.role === 'admin';
 
-  // Simulate loading product data
+  // Fetch product data from API
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 600);
-    
-    return () => clearTimeout(timer);
-  }, [productId]);
+    const fetchProduct = async () => {
+      try {
+        const response = await fetch(`/api/products/${productId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setProduct(data);
+        } else {
+          setProduct(null);
+        }
+      } catch (error) {
+        console.error('Error fetching product:', error);
+        setProduct(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  // Get product data
-  const product = productsData[productId as keyof typeof productsData];
+    fetchProduct();
+  }, [productId]);
 
   // Show loading state
   if (isLoading) {
@@ -184,11 +213,18 @@ export default function ProductDetailPage() {
     
     // Show success toast
     toast.success(`🛒 ${product.name} added to cart!`, {
-      duration: 3000,
+      duration: 2000,
     });
+    
+    // Redirect to cart page
+    setTimeout(() => {
+      router.push('/cart');
+    }, 500);
   };
 
   const handleAddToFavorites = () => {
+    if (!product) return;
+    
     // Check if user is signed in
     if (!isSignedIn) {
       toast.error('🔒 Please sign in to add items to favorites', {
@@ -200,13 +236,31 @@ export default function ProductDetailPage() {
       return;
     }
 
-    // Add your favorites logic here
-    console.log('Added to favorites:', product.id);
-    
-    // Show success toast
-    toast.success(`❤️ ${product.name} added to favorites!`, {
-      duration: 2000,
-    });
+    // Check if admin
+    if (isAdmin) {
+      toast.error('Admins cannot add favorites');
+      return;
+    }
+
+    // Toggle favorite
+    if (isFavorite(product.id)) {
+      removeFromFavorites(product.id);
+      toast.success(`❤️ ${product.name} removed from favorites!`, {
+        duration: 2000,
+      });
+    } else {
+      addToFavorites({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.images[0] || '',
+        category: product.category,
+        inStock: product.stock > 0,
+      });
+      toast.success(`💖 ${product.name} added to favorites!`, {
+        duration: 2000,
+      });
+    }
   };
 
   return (
@@ -236,7 +290,7 @@ export default function ProductDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Product Images */}
             <div>
-              <ProductImage images={product.images} productName={product.name} />
+              <ProductImage images={product.images || []} productName={product.name} />
             </div>
 
             {/* Product Details */}
@@ -245,53 +299,22 @@ export default function ProductDetailPage() {
                 name={product.name}
                 price={product.price}
                 rating={product.rating}
-                reviews={product.reviews}
+                reviews={product.reviewCount || 0}
                 description={product.description}
-                inStock={product.inStock}
+                inStock={product.stock > 0}
                 category={product.category}
                 onAddToCart={handleAddToCart}
                 onAddToFavorites={handleAddToFavorites}
+                isFavorited={isFavorite(product.id)}
               />
             </div>
           </div>
 
           {/* Product Reviews Section */}
-          <div className="mt-12 border-t border-gray-200 pt-12" id="reviews">
+          <div className="mt-12 border-t border-gray-200 dark:border-gray-700 pt-12" id="reviews">
             <ProductReviews
-              reviews={[
-                {
-                  id: '1',
-                  author: 'Sarah Johnson',
-                  rating: 5,
-                  date: 'October 15, 2025',
-                  title: 'Amazing quality!',
-                  comment: 'This product exceeded my expectations. The quality is outstanding and it works perfectly.',
-                  verified: true,
-                  helpful: 24,
-                },
-                {
-                  id: '2',
-                  author: 'Michael Chen',
-                  rating: 4,
-                  date: 'October 10, 2025',
-                  title: 'Great value for money',
-                  comment: 'Very satisfied with this purchase. Does exactly what it promises to do.',
-                  verified: true,
-                  helpful: 15,
-                },
-                {
-                  id: '3',
-                  author: 'Emily Rodriguez',
-                  rating: 5,
-                  date: 'October 5, 2025',
-                  title: 'Highly recommend!',
-                  comment: 'Best purchase I have made in a while. Shipping was fast and the product is excellent.',
-                  verified: false,
-                  helpful: 8,
-                },
-              ]}
-              averageRating={product.rating}
-              totalReviews={product.reviews}
+              productId={product.id}
+              productName={product.name}
             />
           </div>
         </div>
