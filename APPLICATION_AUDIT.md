@@ -614,32 +614,52 @@ This comprehensive audit identifies **24 issues** across critical features, miss
 
 ---
 
-### 19. Payment Edge Cases
+### 19. Payment Edge Cases ✅
 
-**Status**: ⚠️ Incomplete Error Handling  
-**Location**: M-Pesa and Stripe payment flows
+**Status**: ✅ **IMPLEMENTED**  
+**Location**: Payment verification system, admin dashboard
+**Implementation Date**: October 27, 2025
 
-**Issue**:
-- What happens if M-Pesa callback never arrives?
-- What if payment succeeds but webhook fails?
-- What if webhook is delayed (user sees pending)?
-- No manual payment verification for admin
-- No payment retry mechanism
+**Features Implemented**:
+- ✅ Manual payment verification API (M-Pesa & Stripe)
+- ✅ "Verify Payment" button on user orders page
+- ✅ Admin pending payments dashboard with real-time monitoring
+- ✅ Payment audit log system (tracks all payment events)
+- ✅ Auto-cancellation of orders with pending payments after 24 hours
+- ✅ Comprehensive payment status tracking and history
+- ✅ Stuck payment detection and warnings
+- ✅ Admin can view all pending/stuck payments
+- ✅ Detailed payment logs with user actions and system events
 
-**Risk**:
-- Lost orders
-- Customer confusion
-- Revenue loss
-- Support tickets
+**Files Created**:
+- `app/api/payments/verify/route.ts` - Manual payment verification
+- `app/api/admin/payments/pending/route.ts` - Pending payments dashboard API
+- `app/api/admin/payments/logs/route.ts` - Payment audit logs API
+- `app/api/payments/auto-cancel/route.ts` - Auto-cancel expired orders
+- `app/admin/payments/page.tsx` - Admin pending payments dashboard
+- `payment_logs_migration.sql` - Database migration for audit logs
+- Updated `prisma/schema.prisma` - Added PaymentLog model
 
-**Solution**:
-- Add payment status polling for customers
-- "Verify Payment" button on order page
-- Admin: Manual payment verification tool
-- Admin: View all pending payments
-- Payment webhook retry mechanism
-- Timeout handling (auto-cancel after 24 hours)
-- Payment audit log
+**Payment Verification Flow**:
+1. User sees "Verify Payment" button for pending payments
+2. Button triggers API to check M-Pesa/Stripe status
+3. Payment status updated automatically if successful
+4. Full audit trail logged for every verification attempt
+
+**Admin Dashboard Features**:
+- Real-time pending payment monitoring
+- Stuck payment detection (24+ hours)
+- Warning for payments 1-24 hours old
+- Filter by payment method (M-Pesa, Stripe)
+- One-click manual verification
+- View detailed payment logs per order
+- Bulk auto-cancellation of expired orders
+
+**Auto-Cancellation**:
+- Orders with pending payments older than 24 hours are auto-cancelled
+- Stock is restored automatically
+- Payment logs track cancellation reason
+- Can be triggered manually by admin or via cron job
 
 ---
 

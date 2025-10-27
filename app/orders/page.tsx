@@ -48,6 +48,9 @@ export default function OrdersPage() {
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [selectedOrderForCancel, setSelectedOrderForCancel] = useState<{ id: string; orderNumber: string } | null>(null);
 
+  // Payment verification state
+  const [isVerifying, setIsVerifying] = useState<string | null>(null);
+
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -233,6 +236,42 @@ export default function OrdersPage() {
   const canCancelOrder = (order: Order) => {
     // Can only cancel if order is PENDING or PROCESSING and not already cancelled
     return (order.status === 'PENDING' || order.status === 'PROCESSING') && !order.cancelledAt;
+  };
+
+  // Payment verification handler
+  const handleVerifyPayment = async (orderId: string, orderNumber: string) => {
+    try {
+      setIsVerifying(orderId);
+      toast.loading('Verifying payment...', { id: 'verify-payment' });
+
+      const response = await fetch('/api/payments/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Payment verified successfully! Your order has been updated.', { id: 'verify-payment' });
+        // Refetch orders to show updated status
+        fetchOrders();
+        fetchReviewableProducts();
+      } else {
+        toast.error(data.message || 'Payment verification failed. Please try again or contact support.', { 
+          id: 'verify-payment',
+          duration: 5000,
+        });
+      }
+    } catch (error: any) {
+      console.error('Error verifying payment:', error);
+      toast.error('Failed to verify payment. Please try again later.', { 
+        id: 'verify-payment',
+        duration: 5000,
+      });
+    } finally {
+      setIsVerifying(null);
+    }
   };
 
   // Invoice download handler
@@ -560,6 +599,29 @@ export default function OrdersPage() {
                         {order.items.length} item{order.items.length > 1 ? 's' : ''}
                       </div>
                       <div className="flex flex-col gap-2 mt-2">
+                        {/* Verify Payment Button - Show for pending payments */}
+                        {order.paymentStatus === 'PENDING' && order.status !== 'CANCELLED' && (
+                          <button
+                            onClick={() => handleVerifyPayment(order.id, order.orderNumber)}
+                            disabled={isVerifying === order.id}
+                            className="px-4 py-2 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400 dark:hover:bg-yellow-900/30 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ml-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isVerifying === order.id ? (
+                              <>
+                                <div className="w-4 h-4 border-2 border-t-transparent border-yellow-700 dark:border-yellow-400 rounded-full animate-spin" />
+                                <span>Verifying...</span>
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>Verify Payment</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+
                         {canDownloadInvoice(order) ? (
                           <button
                             onClick={() => handleDownloadInvoice(order.id, order.orderNumber)}

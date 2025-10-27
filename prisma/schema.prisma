@@ -294,11 +294,41 @@ model Payment {
   updatedAt              DateTime  @updatedAt @map("updated_at")
   
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  logs  PaymentLog[]
   
   @@map("payments")
   @@index([orderId])
   @@index([checkoutRequestID])
   @@index([status])
+}
+
+// Payment Audit Log Model
+model PaymentLog {
+  id              String   @id @default(uuid())
+  orderId         String   @map("order_id")
+  paymentId       String?  @map("payment_id")
+  payment         Payment? @relation(fields: [paymentId], references: [id], onDelete: Cascade, map: "fk_payment_logs_payment")
+  
+  action          String   // WEBHOOK_RECEIVED, VERIFICATION_REQUESTED, MANUAL_VERIFICATION, STATUS_UPDATED, AUTO_CANCELLED, etc.
+  status          String   // SUCCESS, FAILED, PENDING
+  method          String   // MPESA, STRIPE, MANUAL
+  
+  initiatedBy     String?  @map("initiated_by") // userId or "SYSTEM"
+  initiatorRole   String?  @map("initiator_role") // USER, ADMIN, SYSTEM
+  
+  details         String?  @db.Text // JSON string with additional details
+  errorMessage    String?  @db.Text @map("error_message")
+  
+  previousStatus  String?  @map("previous_status")
+  newStatus       String?  @map("new_status")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  
+  @@map("payment_logs")
+  @@index([orderId])
+  @@index([paymentId])
+  @@index([action])
+  @@index([createdAt])
 }
 
 // Coupon Model
