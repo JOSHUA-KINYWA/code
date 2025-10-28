@@ -1,5 +1,28 @@
 // Email utility for sending notifications
-// Uses Resend API (https://resend.com)
+// Uses nodemailer with SMTP (Gmail)
+
+import nodemailer from 'nodemailer';
+import { renderAdminNewOrderEmail, renderOrderCancellationEmail } from './email-templates';
+
+// Configure SMTP transporter
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: process.env.SMTP_SECURE === 'true',
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASSWORD,
+  },
+});
+
+// Verify transporter configuration
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('❌ SMTP connection error:', error);
+  } else {
+    console.log('✅ SMTP server is ready to send emails');
+  }
+});
 
 type OrderEmailData = {
   orderNumber: string;
@@ -30,9 +53,6 @@ type AdminOrderNotificationData = {
   paymentStatus: string;
 };
 
-// In production, you would use Resend or SendGrid
-// For now, we'll create a mock email service that logs to console
-
 export async function sendOrderConfirmationEmail(data: OrderEmailData) {
   try {
     console.log('📧 Sending Order Confirmation Email...');
@@ -40,23 +60,16 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData) {
     console.log('Order:', data.orderNumber);
     console.log('Total:', `KES ${data.total.toFixed(2)}`);
     
-    // In production, use Resend:
-    /*
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    
-    await resend.emails.send({
-      from: 'orders@yourdomain.com',
+    // Send email using nodemailer
+    const info = await transporter.sendMail({
+      from: `"NexStore" <${process.env.SMTP_USER}>`,
       to: data.customerEmail,
       subject: `Order Confirmation - ${data.orderNumber}`,
       html: renderOrderConfirmationEmail(data),
     });
-    */
     
-    // Simulate email sending delay
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    console.log('✅ Order confirmation email sent successfully');
-    return { success: true };
+    console.log('✅ Order confirmation email sent:', info.messageId);
+    return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('❌ Failed to send order confirmation email:', error);
     return { success: false, error };
@@ -70,22 +83,16 @@ export async function sendPaymentConfirmationEmail(data: OrderEmailData) {
     console.log('Order:', data.orderNumber);
     console.log('Amount Paid:', `KES ${data.total.toFixed(2)}`);
     
-    // In production, use Resend:
-    /*
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    
-    await resend.emails.send({
-      from: 'payments@yourdomain.com',
+    // Send email using nodemailer
+    const info = await transporter.sendMail({
+      from: `"NexStore" <${process.env.SMTP_USER}>`,
       to: data.customerEmail,
-      subject: `Payment Received - ${data.orderNumber}`,
+      subject: `Payment Received - ${data.orderNumber} ✅`,
       html: renderPaymentConfirmationEmail(data),
     });
-    */
     
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    console.log('✅ Payment confirmation email sent successfully');
-    return { success: true };
+    console.log('✅ Payment confirmation email sent:', info.messageId);
+    return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('❌ Failed to send payment confirmation email:', error);
     return { success: false, error };
@@ -104,22 +111,16 @@ export async function sendOrderStatusUpdateEmail(
       console.log('Tracking Number:', data.trackingNumber);
     }
     
-    // In production, use Resend:
-    /*
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    
-    await resend.emails.send({
-      from: 'updates@yourdomain.com',
+    // Send email using nodemailer
+    const info = await transporter.sendMail({
+      from: `"NexStore" <${process.env.SMTP_USER}>`,
       to: data.customerEmail,
-      subject: `Order ${data.newStatus} - ${data.orderNumber}`,
+      subject: `Order ${data.newStatus} - ${data.orderNumber} 📦`,
       html: renderOrderStatusUpdateEmail(data),
     });
-    */
     
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    console.log('✅ Order status update email sent successfully');
-    return { success: true };
+    console.log('✅ Order status update email sent:', info.messageId);
+    return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('❌ Failed to send order status update email:', error);
     return { success: false, error };
@@ -129,27 +130,21 @@ export async function sendOrderStatusUpdateEmail(
 export async function sendAdminNewOrderNotification(data: AdminOrderNotificationData) {
   try {
     console.log('📧 Sending Admin New Order Notification...');
-    console.log('To: admin@yourdomain.com');
+    console.log('To:', process.env.SMTP_USER);
     console.log('Order:', data.orderNumber);
     console.log('Customer:', data.customerName);
     console.log('Total:', `KES ${data.total.toFixed(2)}`);
     
-    // In production, use Resend:
-    /*
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    
-    await resend.emails.send({
-      from: 'system@yourdomain.com',
-      to: process.env.ADMIN_EMAIL,
+    // Send email to admin (using SMTP user as admin email)
+    const info = await transporter.sendMail({
+      from: `"NexStore System" <${process.env.SMTP_USER}>`,
+      to: process.env.SMTP_USER, // Admin receives notification at their email
       subject: `🛒 New Order: ${data.orderNumber}`,
       html: renderAdminNewOrderEmail(data),
     });
-    */
     
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    console.log('✅ Admin notification email sent successfully');
-    return { success: true };
+    console.log('✅ Admin notification email sent:', info.messageId);
+    return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('❌ Failed to send admin notification email:', error);
     return { success: false, error };
@@ -175,22 +170,16 @@ export async function sendOrderCancellationEmail(data: OrderCancellationData) {
     console.log('Reason:', data.cancellationReason);
     console.log('Refund Amount:', data.refundAmount ? `KES ${data.refundAmount.toFixed(2)}` : 'N/A');
     
-    // In production, use Resend:
-    /*
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    
-    await resend.emails.send({
-      from: 'orders@yourdomain.com',
+    // Send email using nodemailer
+    const info = await transporter.sendMail({
+      from: `"NexStore" <${process.env.SMTP_USER}>`,
       to: data.customerEmail,
-      subject: `Order Cancelled - ${data.orderNumber}`,
+      subject: `Order Cancelled - ${data.orderNumber} ❌`,
       html: renderOrderCancellationEmail(data),
     });
-    */
     
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    console.log('✅ Order cancellation email sent successfully');
-    return { success: true };
+    console.log('✅ Order cancellation email sent:', info.messageId);
+    return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('❌ Failed to send order cancellation email:', error);
     return { success: false, error };
@@ -286,10 +275,11 @@ export function renderOrderConfirmationEmail(data: OrderEmailData): string {
           <tr>
             <td style="background-color: #f9fafb; padding: 30px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
               <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">
-                Need help? Contact us at <a href="mailto:support@yourdomain.com" style="color: #f97316; text-decoration: none;">support@yourdomain.com</a>
+                Need help? Contact us at <a href="mailto:joshuakinywa96@gmail.com" style="color: #f97316; text-decoration: none;">joshuakinywa96@gmail.com</a>
+                or WhatsApp: <a href="https://wa.me/254758036936" style="color: #f97316; text-decoration: none;">+254 758 036936</a>
               </p>
               <p style="margin: 0; font-size: 12px; color: #999;">
-                © ${new Date().getFullYear()} Your Store. All rights reserved.
+                © ${new Date().getFullYear()} NexStore. Built with ❤️ in Kenya. All rights reserved.
               </p>
             </td>
           </tr>
@@ -365,10 +355,11 @@ export function renderPaymentConfirmationEmail(data: OrderEmailData): string {
           <tr>
             <td style="background-color: #f9fafb; padding: 30px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
               <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">
-                Questions? Contact us at <a href="mailto:support@yourdomain.com" style="color: #10b981; text-decoration: none;">support@yourdomain.com</a>
+                Questions? Contact us at <a href="mailto:joshuakinywa96@gmail.com" style="color: #10b981; text-decoration: none;">joshuakinywa96@gmail.com</a>
+                or WhatsApp: <a href="https://wa.me/254758036936" style="color: #10b981; text-decoration: none;">+254 758 036936</a>
               </p>
               <p style="margin: 0; font-size: 12px; color: #999;">
-                © ${new Date().getFullYear()} Your Store. All rights reserved.
+                © ${new Date().getFullYear()} NexStore. Built with ❤️ in Kenya. All rights reserved.
               </p>
             </td>
           </tr>
@@ -448,10 +439,11 @@ export function renderOrderStatusUpdateEmail(
           <tr>
             <td style="background-color: #f9fafb; padding: 30px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
               <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">
-                Track your order or contact us at <a href="mailto:support@yourdomain.com" style="color: ${statusColor}; text-decoration: none;">support@yourdomain.com</a>
+                Track your order or contact us at <a href="mailto:joshuakinywa96@gmail.com" style="color: ${statusColor}; text-decoration: none;">joshuakinywa96@gmail.com</a>
+                or WhatsApp: <a href="https://wa.me/254758036936" style="color: ${statusColor}; text-decoration: none;">+254 758 036936</a>
               </p>
               <p style="margin: 0; font-size: 12px; color: #999;">
-                © ${new Date().getFullYear()} Your Store. All rights reserved.
+                © ${new Date().getFullYear()} NexStore. Built with ❤️ in Kenya. All rights reserved.
               </p>
             </td>
           </tr>
