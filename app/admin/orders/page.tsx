@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import Link from 'next/link';
 
 type OrderItem = {
   id: string;
@@ -587,9 +588,12 @@ export default function AdminOrdersPage() {
                       <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                      <Link
+                        href={`/admin/orders/${order.id}`}
+                        className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                      >
                         {order.orderNumber}
-                      </div>
+                      </Link>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900 dark:text-white">
