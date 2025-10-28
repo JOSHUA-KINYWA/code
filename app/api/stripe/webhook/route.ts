@@ -3,6 +3,11 @@ import { headers } from 'next/headers';
 import { stripe } from '@/lib/stripe';
 import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
+import { clerkClient } from '@clerk/nextjs/server';
+import {
+  sendPaymentConfirmationEmail,
+  sendOrderStatusUpdateEmail,
+} from '@/lib/email';
 
 const prisma = new PrismaClient();
 
@@ -45,15 +50,82 @@ export async function POST(request: Request) {
         
         // Update order status - automatically approve when payment is completed
         if (session.metadata?.orderId) {
-          await prisma.order.update({
+          const updatedOrder = await prisma.order.update({
             where: { id: session.metadata.orderId },
             data: {
               status: 'PROCESSING', // Automatically approve order
               paymentStatus: 'PAID',
             },
+            include: {
+              items: {
+                include: {
+                  product: true,
+                },
+              },
+            },
           });
 
-          console.log(`Order ${session.metadata.orderId} paid and automatically approved`);
+          console.log(`Order ${session.metadata.orderId} paid and automatically approved via Stripe`);
+
+          // Send payment confirmation and status update emails
+          try {
+            const client = await clerkClient();
+            const user = await client.users.getUser(updatedOrder.userId);
+            const customerName = user.fullName || user.firstName || 'Customer';
+            const customerEmail = user.emailAddresses[0]?.emailAddress || '';
+
+            if (customerEmail) {
+              // Send payment confirmation
+              await sendPaymentConfirmationEmail({
+                orderNumber: updatedOrder.orderNumber,
+                customerName,
+                customerEmail,
+                total: updatedOrder.total,
+                items: updatedOrder.items.map((item: any) => ({
+                  name: item.product.name,
+                  quantity: item.quantity,
+                  price: item.price,
+                })),
+                shippingAddress: {
+                  street: updatedOrder.shippingAddress,
+                  city: updatedOrder.shippingCity,
+                  state: updatedOrder.shippingState,
+                  zip: updatedOrder.shippingZip,
+                  country: updatedOrder.shippingCountry,
+                },
+                paymentMethod: updatedOrder.paymentMethod,
+                status: 'PAID',
+              });
+
+              // Send order status update (PROCESSING)
+              await sendOrderStatusUpdateEmail({
+                orderNumber: updatedOrder.orderNumber,
+                customerName,
+                customerEmail,
+                total: updatedOrder.total,
+                items: updatedOrder.items.map((item: any) => ({
+                  name: item.product.name,
+                  quantity: item.quantity,
+                  price: item.price,
+                })),
+                shippingAddress: {
+                  street: updatedOrder.shippingAddress,
+                  city: updatedOrder.shippingCity,
+                  state: updatedOrder.shippingState,
+                  zip: updatedOrder.shippingZip,
+                  country: updatedOrder.shippingCountry,
+                },
+                paymentMethod: updatedOrder.paymentMethod,
+                status: 'PROCESSING',
+                newStatus: 'PROCESSING',
+              });
+
+              console.log('✅ Stripe payment confirmation emails sent');
+            }
+          } catch (emailError) {
+            console.error('❌ Failed to send Stripe payment emails:', emailError);
+            // Don't fail the webhook if email fails
+          }
         }
         break;
 
