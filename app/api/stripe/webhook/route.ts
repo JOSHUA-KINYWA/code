@@ -65,7 +65,13 @@ export async function POST(request: Request) {
             },
           });
 
-          console.log(`Order ${session.metadata.orderId} paid and automatically approved via Stripe`);
+          console.log('✅ Stripe Payment completed and order automatically approved');
+          console.log('✅ Order updated:', { 
+            orderNumber: updatedOrder.orderNumber, 
+            status: updatedOrder.status, 
+            paymentStatus: updatedOrder.paymentStatus,
+            stripeSessionId: session.id
+          });
 
           // Send payment confirmation and status update emails
           try {

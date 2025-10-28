@@ -72,7 +72,12 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      console.log('Payment completed and order automatically approved:', CheckoutRequestID);
+      console.log('✅ M-Pesa Payment completed and order automatically approved:', CheckoutRequestID);
+      console.log('✅ Order updated:', { 
+        orderNumber: updatedOrder.orderNumber, 
+        status: updatedOrder.status, 
+        paymentStatus: updatedOrder.paymentStatus 
+      });
 
       // Send payment confirmation email
       try {
