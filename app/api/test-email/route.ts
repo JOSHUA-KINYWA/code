@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Get user details from Clerk
-    const user = await clerkClient().users.getUser(userId);
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
     const customerName = user.fullName || user.firstName || 'Customer';
     const customerEmail = user.emailAddresses[0]?.emailAddress || '';
 
