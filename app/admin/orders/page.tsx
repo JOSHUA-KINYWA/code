@@ -96,6 +96,35 @@ export default function AdminOrdersPage() {
     fetchOrders(true);
   };
 
+  // Manual payment approval
+  const handleApprovePayment = async (orderId: string, orderNumber: string) => {
+    if (!confirm(`Approve payment for order ${orderNumber}?`)) {
+      return;
+    }
+
+    try {
+      setUpdatingOrderId(orderId);
+      const response = await fetch('/api/admin/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          paymentStatus: 'PAID',
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to approve payment');
+
+      toast.success('Payment approved successfully!');
+      await fetchOrders();
+    } catch (error) {
+      console.error('Error approving payment:', error);
+      toast.error('Failed to approve payment');
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
   // Export orders handler
   const handleExportOrders = async () => {
     try {
@@ -569,9 +598,21 @@ export default function AdminOrdersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(order.paymentStatus)}`}>
-                        {order.paymentStatus}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(order.paymentStatus)}`}>
+                          {order.paymentStatus}
+                        </span>
+                        {order.paymentStatus === 'PENDING' && !(order.status === 'CANCELLED' || order.cancelledAt) && (
+                          <button
+                            onClick={() => handleApprovePayment(order.id, order.orderNumber)}
+                            disabled={updatingOrderId === order.id}
+                            className="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Manually approve payment"
+                          >
+                            ✓ Approve
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
@@ -588,8 +629,9 @@ export default function AdminOrdersPage() {
                         <select
                           value={order.status}
                           onChange={(e) => updateOrderStatus(order.id, e.target.value, false)}
-                          disabled={updatingOrderId === order.id}
+                          disabled={updatingOrderId === order.id || order.paymentStatus === 'PENDING'}
                           className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                          title={order.paymentStatus === 'PENDING' ? 'Approve payment first before changing status' : 'Update order status'}
                         >
                           <option value="PENDING">Pending</option>
                           <option value="PROCESSING">Processing</option>

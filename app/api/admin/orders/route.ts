@@ -100,8 +100,22 @@ export async function PATCH(request: Request) {
 
     // Build update data
     const updateData: any = {};
+    
+    // If payment is being approved, also set order status to PROCESSING
+    if (paymentStatus === 'PAID') {
+      updateData.paymentStatus = 'PAID';
+      // Only update status if it's still PENDING
+      const currentOrder = await prisma.order.findUnique({
+        where: { id: orderId },
+        select: { status: true },
+      });
+      
+      if (currentOrder?.status === 'PENDING') {
+        updateData.status = 'PROCESSING';
+      }
+    }
+    
     if (status) updateData.status = status;
-    if (paymentStatus) updateData.paymentStatus = paymentStatus;
     if (trackingNumber) updateData.trackingNumber = trackingNumber;
 
     // Update the order
@@ -128,7 +142,10 @@ export async function PATCH(request: Request) {
       const customerName = clerkUser.fullName || clerkUser.firstName || 'Customer';
       const customerEmail = clerkUser.emailAddresses[0]?.emailAddress || '';
 
-      if (customerEmail && status) {
+      // Send email if status changed OR payment was approved
+      if (customerEmail && (status || paymentStatus === 'PAID')) {
+        const emailStatus = status || updatedOrder.status;
+        
         await sendOrderStatusUpdateEmail({
           orderNumber: updatedOrder.orderNumber,
           customerName,
@@ -148,9 +165,11 @@ export async function PATCH(request: Request) {
           },
           paymentMethod: updatedOrder.paymentMethod,
           status: updatedOrder.status,
-          newStatus: status,
+          newStatus: emailStatus,
           trackingNumber: trackingNumber || undefined,
         });
+        
+        console.log(`✅ Email sent for order ${updatedOrder.orderNumber}: ${emailStatus}`);
       }
     } catch (emailError) {
       console.error('Failed to send status update email:', emailError);
