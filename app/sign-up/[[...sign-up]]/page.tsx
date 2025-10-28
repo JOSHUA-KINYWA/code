@@ -15,7 +15,7 @@ export default function SignUpPage() {
                   </svg>
                 </div>
                 <h1 className="text-4xl font-bold mb-4">
-                  Join Our Community
+                  Join NexStore Community
                 </h1>
                 <p className="text-lg text-white/90">
                   Create an account and unlock exclusive benefits
@@ -112,6 +112,7 @@ export default function SignUpPage() {
                   layout: {
                     socialButtonsPlacement: 'top',
                     socialButtonsVariant: 'blockButton',
+                    unsafe_disableDevelopmentModeWarnings: true,
                   },
                 }}
                 routing="path"

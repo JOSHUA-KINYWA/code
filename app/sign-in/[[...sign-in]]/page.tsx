@@ -15,7 +15,7 @@ export default function SignInPage() {
                   </svg>
                 </div>
                 <h1 className="text-4xl font-bold mb-4">
-                  Welcome to Your Store
+                  Welcome to NexStore
                 </h1>
                 <p className="text-lg text-white/90">
                   Sign in to access your personalized shopping experience
@@ -111,6 +111,7 @@ export default function SignInPage() {
                   layout: {
                     socialButtonsPlacement: 'top',
                     socialButtonsVariant: 'blockButton',
+                    unsafe_disableDevelopmentModeWarnings: true,
                   },
                 }}
                 routing="path"
